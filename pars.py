@@ -3,6 +3,7 @@ class Parser:
     ##### Parser header #####
     def __init__(self, scanner):
         self.next_token = scanner.next_token
+        self.should_be_colon = scanner.should_be_colon
         self.token = self.next_token()
 
     def take_token(self, token_type):
@@ -10,6 +11,13 @@ class Parser:
             self.error("Unexpected token: %s" % token_type)
         if token_type != 'EOF':
             self.token = self.next_token()
+
+    def check_last_semicolon(self):
+        if self.token.type != 'ENDBRACKET':
+            if self.token.type == 'NEXT':
+                self.error("Colon after last element is unnecessary")
+            else:
+                self.error("Unexpected token: %s" % self.token.type)
 
     def error(self, msg):
         raise RuntimeError('Parser error, %s' % msg)
@@ -19,15 +27,18 @@ class Parser:
     # Starting symbol
     def start(self):
         # start -> program EOF
-        if self.token.type == 'PRINT' or self.token.type == 'ID' or self.token.type == 'EOF' or self.token.type == 'IF':
+        self.take_token('STARTBRACKET')
+        if self.token.type == '"$id"' or self.token.type == '"$shema"' or self.token.type == 'ID' or self.token.type == 'EOF' or self.token.type == 'IF':
             self.program()
+            self.take_token('ENDBRACKET')
             self.take_token('EOF')
+            print("json_stm OK")
         else:
             self.error("Epsilon not allowed")
 
     def program(self):
         # program -> statement program
-        if self.token.type == 'PRINT' or self.token.type == 'ID' or self.token.type == 'IF':
+        if self.token.type == '"$id"' or self.token.type == '"$shema"' or self.token.type == 'ID' or self.token.type == 'IF':
             self.statement()
             self.program()
         # program -> eps
@@ -35,9 +46,12 @@ class Parser:
             pass
 
     def statement(self):
-        # statement -> print_stmt
-        if self.token.type == 'PRINT':
-            self.print_stmt()
+        # statement -> id_stmt
+        if self.token.type == '"$id"':
+            self.id_stmt()
+        # statement -> shema_stmt
+        elif self.token.type == '"$shema"':
+            self.shema_stmt()
         # statement -> assign_stmt
         elif self.token.type == 'ID':
             self.assign_stmt()
@@ -47,13 +61,31 @@ class Parser:
         else:
             self.error("Epsilon not allowed")
 
-    # print_stmt -> PRINT value END
-    def print_stmt(self):
-        if self.token.type == 'PRINT':
-            self.take_token('PRINT')
+    # shema_stmt -> $shema_stmt ASSIGN value NEXT END
+    def shema_stmt(self):
+        if self.token.type == '"$shema"':
+            self.take_token('"$shema"')
+            self.take_token('ASSIGN')
             self.value()
-            self.take_token('END')
-            print("print_stmt OK")
+            if self.should_be_colon():
+                self.take_token('NEXT')
+            else:
+                self.check_last_semicolon()
+            print("shema_stmt OK")
+        else:
+            self.error("Epsilon not allowed")
+
+    # id_stmt -> $id ASSIGN value NEXT END
+    def id_stmt(self):
+        if self.token.type == '"$id"':
+            self.take_token('"$id"')
+            self.take_token('ASSIGN')
+            self.value()
+            if self.should_be_colon():
+                self.take_token('NEXT')
+            else:
+                self.check_last_semicolon()
+            print("id_stmt OK")
         else:
             self.error("Epsilon not allowed")
 

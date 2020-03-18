@@ -13,12 +13,17 @@ class Scanner:
             self.tokens.append(token)
 
     def tokenize(self, input_string):
-        keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN', 'PRINT', 'EOF'}
+        keywords = {'IF', 'THEN', 'ENDIF', 'PRINT', 'EOF', '"$id"', '"$shema"', 'title', 'type', 'properties',
+                    'description', 'required', 'minimum', 'maximum', 'enum', 'definitions', '$ref', 'minLength',
+                    'maxLength'}
         token_specification = [
             ('NUMBER', r'\d+(\.\d*)?'),  # Integer or decimal number
-            ('ASSIGN', r':='),  # Assignment operator
+            ('ASSIGN', r':'),  # Assignment operator
             ('END', r';'),  # Statement terminator
-            ('ID', r'[A-Za-z]+'),  # Identifiers
+            ('ID', r'"[A-Za-z0-9\$\/\.\:\#\-]+"'),  # Identifiers
+            ('STARTBRACKET', r'{'),  # Beginning of expression
+            ('ENDBRACKET', r'}'),  # End of expression
+            ('NEXT', r','),  # Statement separator
             ('OP', r'[+*\/\-]'),  # Arithmetic operators
             ('NEWLINE', r'\n'),  # Line endings
             ('SKIP', r'[ \t]'),  # Skip over spaces and tabs
@@ -51,3 +56,12 @@ class Scanner:
             return self.tokens[self.current_token_number - 1]
         else:
             raise RuntimeError('Error: No more tokens')
+
+    def should_be_colon(self):
+        if self.current_token_number + 2 < len(self.tokens):
+            if self.tokens[self.current_token_number + 1] == 'ENDBRACKET':
+                return False
+            else:
+                return True
+        else:
+            return False

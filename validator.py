@@ -2,11 +2,10 @@ import pars
 import scanner
 
 input_string = '''
- PRINT x;
-    IF quantity THEN
-        total := total;
-        tax := 0.05;
-    ENDIF;
+{
+    "$id": "https://example.com/person.schema.json" ,
+    "$shema": "http://json-schema.org/draft-07/schema#"
+}
 '''
 
 print(input_string)
